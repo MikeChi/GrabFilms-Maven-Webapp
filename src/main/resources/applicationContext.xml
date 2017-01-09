@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:aop="http://www.springframework.org/schema/aop" 
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+	http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+	http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd
+	http://www.springframework.org/schema/aop 
+	http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+	http://www.springframework.org/schema/tx 
+	http://www.springframework.org/schema/tx/spring-tx-3.0.xsd">
+	
+	<!-- step 1 加载数据库配置文件 -->
+	 <bean id="config"
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="locations">
+			<value>classpath:SqlServer.properties</value>
+		</property>
+	 </bean>
+	 
+	<!-- step 2  获取数据源 dataSource -->
+	<bean id="dataSource" destroy-method="close"
+		class="org.apache.commons.dbcp.BasicDataSource">
+		<property name="driverClassName"  value="${jdbc.driverClassName}" />
+		<property name="url" value="${jdbc.url}" />
+		<property name="username" value="${jdbc.username}" />
+		<property name="password" value="${jdbc.password}" />
+	</bean>  
+	
+	<!-- step 3  根据数据源创建session工厂 -->	 
+	<bean id="sessionFactory"
+		class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		
+		<!--通过包扫描的方式，可以不用每次都添加.hbm.xml文件 -注意这里配置的是.hbm.xml所在的目录-->
+		<property name="mappingDirectoryLocations">  
+            <list>  
+                <value>classpath:com/chi/film</value> 
+            </list>  
+        </property>  
+		
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.dialect">${hibernate.dialect}</prop>
+				<prop key="hibernate.show_sql">${hibernate.show_sql}</prop> 
+				<prop key="hibernate.format_sql">${hibernate.format_sql}</prop>
+			</props>
+		</property>
+	</bean>
+
+	 <!-- 依赖注入我们需要的Entity、Dao、Service -->
+	 <bean id="movie" class="com.chi.film.Movie"></bean>
+	 <bean id="searchMovieDao" class="com.chi.dao.SearchMovieDaoImpl">
+		<property name="sessionFactory">
+			<ref bean="sessionFactory" />
+		</property>
+	</bean>	 
+	<bean id="searchMovieService" class="com.chi.service.SearchMovieServiceImpl">
+		<property name="searchMovieDao">
+			<ref bean="searchMovieDao" />
+		</property>
+	</bean>
+	<bean id="searchMovieAction" class="com.chi.action.SearchMovieAction">
+		<property name="searchMovieService">
+			<ref bean="searchMovieService" />
+		</property>
+	</bean>
+	 
+	 
+	<!-- ================================== Spring 事务管理 ========================================== -->
+	<!-- 由spring管理Hibernate事务 -->
+	<bean id="txManager"
+		class="org.springframework.orm.hibernate4.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory" />
+	</bean>
+	
+	<!--通过<tx:advice>标签指定事务管理器 -->
+	<tx:advice id="txAdvice" transaction-manager="txManager">
+		<!-- 定义属性，声明事务规则  -->
+		<tx:attributes>
+			<tx:method name="find*" read-only="true" />
+			<tx:method name="get*" read-only="true" />
+			<tx:method name="show*" read-only="true" />
+			<tx:method name="*Amount" read-only="true" />
+			<!-- 以上为查询只读属性  -->
+			<tx:method name="save*" propagation="REQUIRED" />
+			<tx:method name="update*" propagation="REQUIRED" />
+			<tx:method name="delete*" propagation="REQUIRED" />
+		</tx:attributes>
+	</tx:advice>
+	
+	<aop:config>
+		<!--定义哪些方法应用这些规则 -->
+		<aop:pointcut id="bussinessService"
+			expression="execution(public * com.shiyan.service.impl.*.*(..))" />
+		<!--将事务通知与应用规则的方法组合-->
+		<aop:advisor pointcut-ref="bussinessService" advice-ref="txAdvice" />
+	</aop:config>
+</beans>

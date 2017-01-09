@@ -1,0 +1,71 @@
+<!DOCTYPE web-app PUBLIC
+ "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
+ "http://java.sun.com/dtd/web-app_2_3.dtd" >
+
+<web-app>
+  <display-name>Archetype Created Web Application</display-name>
+  <!-- Spring Context监听器 -->
+  	<listener>
+		<listener-class>
+		org.springframework.web.context.ContextLoaderListener
+		</listener-class>
+	</listener>
+	
+	<!-- Spring applicationContext文件加载 -->
+	<!-- 1个模块一个applicationContext配置文件 -->
+	<context-param>
+		<param-name>contextConfigLocation</param-name>
+		<param-value>
+			classpath:applicationContext.xml
+		</param-value>
+	</context-param>
+	<!-- 防止页面乱码Spring过滤器 -->
+	<filter>
+		<filter-name>encodingFilter</filter-name>
+		<filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+		<init-param>
+			<param-name>encoding</param-name>
+			<param-value>UTF-8</param-value>
+		</init-param>
+		 <init-param>  
+            <param-name>forceEncoding</param-name>  
+            <param-value>true</param-value>  
+        </init-param> 
+	</filter>	
+	<filter-mapping>
+		<filter-name>encodingFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+	<!-- 	懒加载的配置，必须配置在strutsfilter之前 -->
+    <filter>  
+        <filter-name>openSessionInViewFilter</filter-name>  
+       	<filter-class>  
+            org.springframework.orm.hibernate4.support.OpenSessionInViewFilter
+        </filter-class>     
+		<!-- OpenSessionInViewFilter 过滤器将 Hibernate Session 绑定到请求线程中，它将自动被 Spring 的事务管理器探测到-->
+		<init-param>
+			<param-name>singleSession</param-name>
+			<param-value>true</param-value>
+		</init-param>
+	</filter>
+    <filter-mapping>  
+        <filter-name>openSessionInViewFilter</filter-name>  
+        <url-pattern>/*</url-pattern>  
+    </filter-mapping> 
+	<!-- Struts的配置文件 -->
+	<!-- 设置过滤器 -->
+    <filter>
+    	<filter-name>struts2</filter-name>
+		<filter-class>org.apache.struts2.dispatcher.ng.filter.StrutsPrepareAndExecuteFilter</filter-class>
+	</filter>
+	<!-- 设置过滤器的映射 -->
+	<filter-mapping>
+		<filter-name>struts2</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+	
+	<!-- 工程默认的欢迎页面 -->
+  	<welcome-file-list>
+    	<welcome-file>index.jsp</welcome-file>
+  	</welcome-file-list>
+</web-app>
